@@ -7,11 +7,12 @@ Petit site web statique : on colle l'adresse **mint** d'un token Solana et il es
 Aucune installation ni build n'est nécessaire, c'est du HTML/CSS/JS pur.
 
 ```bash
-python3 -m http.server 8000   # ou : npm start
+npm start
 # puis ouvrir http://localhost:8000
 ```
 
-On peut aussi simplement ouvrir `index.html` dans un navigateur, ou le publier sur GitHub Pages.
+`npm start` lance un mini serveur Node (`server.js`, sans dépendance) et fonctionne sous Windows, macOS et Linux.
+On peut aussi simplement double-cliquer sur `index.html`, ou publier le dossier sur GitHub Pages.
 Un lien direct vers une analyse : `index.html?mint=<ADRESSE>`.
 
 ## Sources de données (gratuites, sans clé)

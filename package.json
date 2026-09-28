@@ -4,7 +4,7 @@
   "private": true,
   "description": "Site statique qui estime si un token Solana est une arnaque à partir de son adresse mint.",
   "scripts": {
-    "start": "python3 -m http.server 8000",
+    "start": "node server.js",
     "test": "node --test tests/*.test.js"
   }
 }
