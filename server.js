@@ -2,6 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 8000;
@@ -38,4 +39,12 @@ http
       res.end(data);
     });
   })
-  .listen(PORT, () => console.log('Crypto Verif : http://localhost:' + PORT));
+  .listen(PORT, () => {
+    console.log('Crypto Verif : http://localhost:' + PORT);
+    // Adresses joignables depuis un téléphone connecté au même Wi-Fi.
+    const lan = Object.values(os.networkInterfaces())
+      .flat()
+      .filter((i) => i && i.family === 'IPv4' && !i.internal)
+      .map((i) => 'http://' + i.address + ':' + PORT + '/mobile.html');
+    if (lan.length) console.log('Sur votre téléphone (même Wi-Fi) : ' + lan.join('  ou  '));
+  });

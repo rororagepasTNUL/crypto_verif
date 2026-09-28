@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Crypto Verif</title>
+  <meta name="description" content="Collez l'adresse mint d'un token Solana pour évaluer le risque d'arnaque (rug pull, honeypot…).">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Crypto Verif">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+  <header class="appbar">
+    <button type="button" class="brand" id="home" aria-label="Accueil">🛡️ <span>Crypto Verif</span></button>
+    <a class="desktop-link" id="desktop-link" href="index.html?desktop=1">Version ordinateur</a>
+  </header>
+
+  <main class="page">
+    <section class="search-card">
+      <form id="form" autocomplete="off">
+        <label for="mint" class="search-label">Adresse mint du token Solana</label>
+        <div class="input-wrap">
+          <input id="mint" name="mint" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" placeholder="Collez l'adresse ici">
+          <button type="button" id="clear" class="icon-btn" aria-label="Effacer" hidden>✕</button>
+        </div>
+        <div class="actions">
+          <button type="button" id="paste" class="btn secondary">📋 Coller</button>
+          <button type="submit" id="submit" class="btn primary">Analyser</button>
+        </div>
+      </form>
+
+      <div id="recent-wrap" class="chips-wrap" hidden>
+        <div class="chips-title">Récents</div>
+        <div id="recent" class="chips"></div>
+      </div>
+      <div class="chips-wrap">
+        <div class="chips-title">Exemples</div>
+        <div class="chips">
+          <button type="button" class="chip" data-mint="DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263">BONK</button>
+          <button type="button" class="chip" data-mint="JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN">JUP</button>
+          <button type="button" class="chip" data-mint="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v">USDC</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="error" class="error" role="alert" hidden></div>
+
+    <div id="loading" class="loading" hidden aria-live="polite">
+      <div class="skeleton big"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+      <p>Analyse du contrat, des détenteurs et du marché…</p>
+    </div>
+
+    <section id="result" hidden></section>
+
+    <details class="settings">
+      <summary>⚙️ Paramètres</summary>
+      <label for="rpc">URL RPC Solana</label>
+      <input id="rpc" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <p class="hint">Le RPC public est limité. Un RPC personnel (Helius, QuickNode…) donne des résultats plus fiables. Enregistré uniquement sur cet appareil.</p>
+    </details>
+
+    <footer class="footer">
+      ⚠️ Outil indicatif basé sur des heuristiques, pas un conseil financier. Faites vos propres recherches.
+    </footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="js/analyze.js"></script>
+  <script src="js/format.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/mobile.js"></script>
+</body>
+</html>

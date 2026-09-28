@@ -15,44 +15,7 @@
 
   const STATUS_ICON = { ok: '✓', warn: '!', danger: '✕', info: 'i', unknown: '?' };
 
-  function esc(s) {
-    return String(s === null || s === undefined ? '' : s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  function short(addr) {
-    return addr && addr.length > 12 ? addr.slice(0, 4) + '…' + addr.slice(-4) : addr;
-  }
-
-  function fmtNum(v) {
-    if (v === null || v === undefined) return '—';
-    return new Intl.NumberFormat('fr-FR', { notation: v >= 1e6 ? 'compact' : 'standard', maximumFractionDigits: 2 }).format(v);
-  }
-
-  function fmtAge(ts) {
-    if (!ts) return '—';
-    const h = (Date.now() - ts) / 3600000;
-    if (h < 1) return Math.max(1, Math.round(h * 60)) + ' min';
-    if (h < 48) return Math.round(h) + ' h';
-    const d = h / 24;
-    if (d < 60) return Math.round(d) + ' jours';
-    if (d < 730) return Math.round(d / 30) + ' mois';
-    return (Math.round((d / 365) * 10) / 10).toLocaleString('fr-FR') + ' ans';
-  }
-
-  function fmtPrice(v) {
-    if (v === null || v === undefined) return '—';
-    if (v >= 1) return Analyzer.fmtUsd(v);
-    return '$' + v.toPrecision(4).replace(/\.?0+$/, '');
-  }
-
-  function solscan(addr) {
-    return 'https://solscan.io/account/' + encodeURIComponent(addr);
-  }
+  const { esc, short, fmtNum, fmtAge, fmtPrice, fmtChange, solscan } = Fmt;
 
   /* ------------------------------------------------------------------ */
 
@@ -130,7 +93,7 @@
       ['Market cap', m ? Analyzer.fmtUsd(m.marketCap) : '—'],
       ['Liquidité', m ? Analyzer.fmtUsd(m.liquidityUsd) : '—'],
       ['Volume 24 h', m ? Analyzer.fmtUsd(m.volume24h) : '—'],
-      ['Variation 24 h', m && m.priceChange24h !== null ? (m.priceChange24h > 0 ? '+' : '') + m.priceChange24h.toLocaleString('fr-FR') + ' %' : '—'],
+      ['Variation 24 h', m ? fmtChange(m.priceChange24h) : '—'],
       ['Âge', m ? fmtAge(m.pairCreatedAt) : '—'],
       ['Détenteurs', data.rugcheck && data.rugcheck.totalHolders ? fmtNum(data.rugcheck.totalHolders) : '—'],
       ['Offre totale', fmtNum(t.supply)],

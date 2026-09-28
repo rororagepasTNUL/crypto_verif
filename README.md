@@ -15,6 +15,16 @@ npm start
 On peut aussi simplement double-cliquer sur `index.html`, ou publier le dossier sur GitHub Pages.
 Un lien direct vers une analyse : `index.html?mint=<ADRESSE>`.
 
+## Version téléphone
+
+`mobile.html` est une version pensée pour le téléphone : gros boutons, bouton « Coller », historique des recherches, partage du résultat, alertes mises en avant.
+Les téléphones qui ouvrent `index.html` y sont redirigés automatiquement (`index.html?desktop=1` pour forcer la version ordinateur).
+
+Pour l'ouvrir sur votre téléphone :
+
+- **Même Wi-Fi que le PC** : lancez `npm start` ; la console affiche une adresse du type `http://192.168.x.x:8000/mobile.html` à taper sur le téléphone. Sous Windows, acceptez la demande du pare-feu (réseau privé).
+- **Partout** : publiez le dépôt avec GitHub Pages (Settings → Pages → branche), puis ouvrez `https://<utilisateur>.github.io/<dépôt>/mobile.html`. Dans le navigateur du téléphone, « Ajouter à l'écran d'accueil » l'installe comme une appli.
+
 ## Sources de données (gratuites, sans clé)
 
 | Source | Ce qu'on en tire |
