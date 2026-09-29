@@ -42,9 +42,38 @@
     return (v > 0 ? '+' : '') + v.toLocaleString('fr-FR') + ' %';
   }
 
-  function solscan(addr) {
-    return 'https://solscan.io/account/' + encodeURIComponent(addr);
+  const CHAINS = {
+    solana: {
+      name: 'Solana',
+      address: (a) => 'https://solscan.io/account/' + encodeURIComponent(a),
+      links: (mint) => [
+        ['RugCheck', 'https://rugcheck.xyz/tokens/' + encodeURIComponent(mint)],
+        ['Solscan', 'https://solscan.io/token/' + encodeURIComponent(mint)],
+      ],
+    },
+    robinhood: {
+      name: 'Robinhood Chain',
+      address: (a) => 'https://robinhoodchain.blockscout.com/address/' + encodeURIComponent(a),
+      links: (mint) => [
+        ['GoPlus', 'https://gopluslabs.io/token-security/4663/' + encodeURIComponent(mint)],
+        ['Blockscout', 'https://robinhoodchain.blockscout.com/token/' + encodeURIComponent(mint)],
+      ],
+    },
+  };
+
+  function chainName(chain) {
+    return (CHAINS[chain] || CHAINS.solana).name;
   }
 
-  root.Fmt = { esc, short, fmtNum, fmtAge, fmtPrice, fmtChange, solscan };
+  /** Lien explorateur pour une adresse (portefeuille, autorité…) sur la bonne chaîne. */
+  function explorer(chain, addr) {
+    return (CHAINS[chain] || CHAINS.solana).address(addr);
+  }
+
+  /** Liens externes utiles pour un token : [[libellé, url], …]. */
+  function tokenLinks(chain, mint) {
+    return (CHAINS[chain] || CHAINS.solana).links(mint);
+  }
+
+  root.Fmt = { esc, short, fmtNum, fmtAge, fmtPrice, fmtChange, chainName, explorer, tokenLinks };
 })(window);

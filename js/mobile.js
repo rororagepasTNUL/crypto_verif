@@ -1,11 +1,10 @@
 (function () {
   'use strict';
 
-  const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
   const RPC_KEY = 'crypto-verif:rpc';
   const RECENT_KEY = 'crypto-verif:recent';
   const STATUS_ICON = { ok: '✓', warn: '!', danger: '✕', info: 'i', unknown: '?' };
-  const { esc, short, fmtNum, fmtAge, fmtPrice, fmtChange, solscan } = Fmt;
+  const { esc, short, fmtNum, fmtAge, fmtPrice, fmtChange, chainName, explorer, tokenLinks } = Fmt;
 
   const $ = (id) => document.getElementById(id);
   const form = $('form');
@@ -84,8 +83,9 @@
     result.hidden = true;
     input.blur();
 
-    if (!BASE58.test(mint)) {
-      errorBox.textContent = 'Adresse invalide : une adresse mint Solana fait 32 à 44 caractères en base58.';
+    const chain = Analyzer.detectChain(mint);
+    if (!chain) {
+      errorBox.textContent = 'Adresse invalide : collez un mint Solana ou une adresse de token Robinhood Chain (0x…).';
       errorBox.hidden = false;
       return;
     }
@@ -98,9 +98,9 @@
     submit.disabled = true;
     loading.scrollIntoView({ behavior: 'smooth', block: 'start' });
     try {
-      const { sources, status } = await Api.fetchAll(mint, rpcInput.value.trim() || Api.DEFAULT_RPC);
-      if (!sources.onchain && !(sources.dexPairs && sources.dexPairs.length) && !sources.rugcheck) {
-        throw new Error('Aucune source de données n\'a répondu. Vérifiez l\'adresse, votre connexion ou l\'URL RPC.');
+      const { sources, status, hasData } = await Api.fetchAll(mint, chain, rpcInput.value.trim() || Api.DEFAULT_RPC);
+      if (!hasData) {
+        throw new Error('Aucune source de données n\'a répondu sur ' + chainName(chain) + '. Vérifiez l\'adresse ou votre connexion.');
       }
       const data = Analyzer.buildData(mint, sources);
       const report = Analyzer.analyze(data);
@@ -118,13 +118,13 @@
 
   /* --- Rendu ---------------------------------------------------------- */
 
-  function checkItem(c) {
+  function checkItem(chain, c) {
     return `
       <li class="check ${c.status}">
         <span class="icon" aria-hidden="true">${STATUS_ICON[c.status]}</span>
         <div class="check-body">
           <div class="check-title">${esc(c.label)}${c.points ? '<span class="points">' + (c.points > 0 ? '+' : '') + c.points + '</span>' : ''}</div>
-          <div class="check-detail">${esc(c.detail)}${c.address ? ' <a href="' + esc(solscan(c.address)) + '" target="_blank" rel="noopener" class="mono">' + esc(short(c.address)) + '</a>' : ''}</div>
+          <div class="check-detail">${esc(c.detail)}${c.address ? ' <a href="' + esc(explorer(chain, c.address)) + '" target="_blank" rel="noopener" class="mono">' + esc(short(c.address)) + '</a>' : ''}</div>
         </div>
       </li>`;
   }
@@ -133,6 +133,7 @@
     const t = data.token;
     const m = data.market;
 
+    const item = (c) => checkItem(data.chain, c);
     const alerts = report.checks.filter((c) => c.status === 'danger' || c.status === 'warn');
     const others = report.checks.filter((c) => c.status !== 'danger' && c.status !== 'warn');
 
@@ -142,8 +143,7 @@
 
     const links = [];
     if (m && m.mainPair.url) links.push(['DexScreener', m.mainPair.url]);
-    links.push(['RugCheck', 'https://rugcheck.xyz/tokens/' + encodeURIComponent(data.mint)]);
-    links.push(['Solscan', 'https://solscan.io/token/' + encodeURIComponent(data.mint)]);
+    links.push(...tokenLinks(data.chain, data.mint));
     if (m) {
       m.websites.forEach((w) => links.push(['🌐 ' + w.label, w.url]));
       m.socials.forEach((s) => links.push([s.type, s.url]));
@@ -156,7 +156,7 @@
       ['Volume 24 h', m ? Analyzer.fmtUsd(m.volume24h) : '—'],
       ['Variation 24 h', m ? fmtChange(m.priceChange24h) : '—'],
       ['Âge', m ? fmtAge(m.pairCreatedAt) : '—'],
-      ['Détenteurs', data.rugcheck && data.rugcheck.totalHolders ? fmtNum(data.rugcheck.totalHolders) : '—'],
+      ['Détenteurs', data.holderCount ? fmtNum(data.holderCount) : '—'],
       ['Offre', fmtNum(t.supply)],
     ];
 
@@ -170,7 +170,7 @@
             ${data.holders.slice(0, 10).map((h) => `
               <li class="${h.isProgram ? 'program' : ''}">
                 <div class="holder-row">
-                  <a class="mono" href="${esc(solscan(h.address))}" target="_blank" rel="noopener">${esc(short(h.address))}</a>
+                  <a class="mono" href="${esc(explorer(data.chain, h.address))}" target="_blank" rel="noopener">${esc(short(h.address))}</a>
                   ${h.label ? '<span class="holder-label">' + esc(h.label) + '</span>' : h.insider ? '<span class="holder-label">initié</span>' : ''}
                   <span class="pct">${esc(Analyzer.fmtPct(h.pct))}</span>
                 </div>
@@ -181,8 +181,8 @@
         </details>`;
     }
 
-    const sourceRow = (name, s) =>
-      '<li class="' + (s.ok ? 'ok' : 'ko') + '">' + esc(name) + ' : ' + (s.ok ? 'OK' + (s.note ? ' (' + esc(s.note) + ')' : '') : 'indisponible' + (s.error ? ' (' + esc(s.error) + ')' : '')) + '</li>';
+    const sourceRow = (s) =>
+      '<li class="' + (s.ok ? 'ok' : 'ko') + '">' + esc(s.name) + ' : ' + (s.ok ? 'OK' + (s.note ? ' (' + esc(s.note) + ')' : '') : 'indisponible' + (s.error ? ' (' + esc(s.error) + ')' : '')) + '</li>';
 
     result.innerHTML = `
       <div class="verdict ${report.level}">
@@ -199,6 +199,7 @@
         <div class="token-info">
           <div class="token-name">${t.name ? esc(t.name) : 'Token inconnu'}</div>
           <div class="token-sub">${t.symbol ? '$' + esc(t.symbol) + ' · ' : ''}<span class="mono">${esc(short(data.mint))}</span></div>
+          <span class="chain-badge ${esc(data.chain)}">${esc(chainName(data.chain))}</span>
         </div>
         <button type="button" class="icon-btn" data-copy="${esc(data.mint)}" aria-label="Copier l'adresse">⧉</button>
       </div>
@@ -210,13 +211,13 @@
       ${alerts.length ? `
       <div class="card">
         <h3>⚠️ Alertes <span class="count">${alerts.length}</span></h3>
-        <ul class="checks">${alerts.map(checkItem).join('')}</ul>
+        <ul class="checks">${alerts.map(item).join('')}</ul>
       </div>` : ''}
 
       ${others.length ? `
       <details class="card" ${alerts.length ? '' : 'open'}>
         <summary>✓ Autres vérifications <span class="count">${others.length}</span></summary>
-        <ul class="checks">${others.map(checkItem).join('')}</ul>
+        <ul class="checks">${others.map(item).join('')}</ul>
       </details>` : ''}
 
       ${holders}
@@ -227,11 +228,7 @@
 
       <details class="card sources">
         <summary>Sources de données</summary>
-        <ul>
-          ${sourceRow('RPC Solana', status.onchain)}
-          ${sourceRow('DexScreener', status.dexscreener)}
-          ${sourceRow('RugCheck', status.rugcheck)}
-        </ul>
+        <ul>${status.map(sourceRow).join('')}</ul>
       </details>
 
       <div class="bottom-bar">

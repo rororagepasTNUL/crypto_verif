@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Crypto Verif — Détecteur d'arnaques Solana</title>
-  <meta name="description" content="Collez l'adresse mint d'un token Solana pour évaluer le risque d'arnaque (rug pull, honeypot…).">
+  <title>Crypto Verif — Détecteur d'arnaques crypto</title>
+  <meta name="description" content="Collez l'adresse d'un token Solana ou Robinhood Chain pour évaluer le risque d'arnaque (rug pull, honeypot…).">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
   <link rel="stylesheet" href="style.css">
   <script>
@@ -24,17 +24,18 @@
         <h1>Crypto Verif</h1>
         <a class="mobile-link" href="mobile.html">📱 Version mobile</a>
       </div>
-      <p class="tagline">Collez l'adresse <strong>mint</strong> d'un token Solana : on analyse le contrat, les détenteurs et le marché pour estimer s'il s'agit d'une arnaque.</p>
+      <p class="tagline">Collez l'adresse d'un token <strong>Solana</strong> (mint) ou <strong>Robinhood Chain</strong> (0x…) : on analyse le contrat, les détenteurs et le marché pour estimer s'il s'agit d'une arnaque.</p>
     </header>
 
     <form id="form" class="search" autocomplete="off">
-      <input id="mint" name="mint" type="text" spellcheck="false" placeholder="Ex. DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" aria-label="Adresse mint du token">
+      <input id="mint" name="mint" type="text" spellcheck="false" placeholder="Mint Solana ou adresse 0x Robinhood Chain" aria-label="Adresse du token">
       <button id="submit" type="submit">Analyser</button>
     </form>
     <p class="examples">Exemples :
       <button type="button" class="link" data-mint="DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263">BONK</button>
       <button type="button" class="link" data-mint="JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN">JUP</button>
       <button type="button" class="link" data-mint="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v">USDC</button>
+      <button type="button" class="link" data-mint="0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73">WETH (Robinhood)</button>
     </p>
 
     <details class="settings">
@@ -50,7 +51,7 @@
 
     <footer class="footer">
       <p>⚠️ Outil indicatif basé sur des heuristiques : un score faible ne garantit pas qu'un token est sûr, et ceci n'est pas un conseil financier. Faites toujours vos propres recherches.</p>
-      <p>Données : RPC Solana · <a href="https://dexscreener.com" target="_blank" rel="noopener">DexScreener</a> · <a href="https://rugcheck.xyz" target="_blank" rel="noopener">RugCheck</a></p>
+      <p>Données : RPC Solana · <a href="https://dexscreener.com" target="_blank" rel="noopener">DexScreener</a> · <a href="https://rugcheck.xyz" target="_blank" rel="noopener">RugCheck</a> · <a href="https://gopluslabs.io" target="_blank" rel="noopener">GoPlus</a> · <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Blockscout</a></p>
     </footer>
   </main>
 

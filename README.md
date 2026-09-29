@@ -1,6 +1,7 @@
 # Crypto Verif
 
-Petit site web statique : on colle l'adresse **mint** d'un token Solana et il estime le risque d'arnaque (rug pull, honeypot…) avec un score de 0 à 100.
+Petit site web statique : on colle l'adresse d'un token **Solana** (mint) ou **Robinhood Chain** (adresse `0x…`) et il estime le risque d'arnaque (rug pull, honeypot…) avec un score de 0 à 100.
+La chaîne est détectée automatiquement d'après le format de l'adresse.
 
 ## Lancer le site
 
@@ -27,11 +28,13 @@ Pour l'ouvrir sur votre téléphone :
 
 ## Sources de données (gratuites, sans clé)
 
-| Source | Ce qu'on en tire |
-| --- | --- |
-| RPC Solana (`solana-rpc.publicnode.com` par défaut, modifiable dans « Paramètres ») | autorités de mint et de gel, extensions Token-2022, offre, plus gros détenteurs |
-| [DexScreener](https://docs.dexscreener.com/api/reference) | prix, market cap, liquidité, volume, achats/ventes, âge, site et réseaux sociaux |
-| [RugCheck](https://api.rugcheck.xyz/swagger/index.html) | liquidité verrouillée, métadonnées modifiables, initiés, alertes, statut « rugged » |
+| Chaîne | Source | Ce qu'on en tire |
+| --- | --- | --- |
+| Solana | RPC Solana (`solana-rpc.publicnode.com` par défaut, modifiable dans « Paramètres ») | autorités de mint et de gel, extensions Token-2022, offre, plus gros détenteurs |
+| Solana | [RugCheck](https://api.rugcheck.xyz/swagger/index.html) | liquidité verrouillée, métadonnées modifiables, initiés, alertes, statut « rugged » |
+| Robinhood Chain | [GoPlus](https://gopluslabs.io/token-security-api) (chain ID 4663) | honeypot, taxes d'achat/vente, fonctions dangereuses (mint, blacklist, pause, soldes modifiables…), propriétaire, détenteurs, LP verrouillée |
+| Robinhood Chain | [Blockscout](https://robinhoodchain.blockscout.com) | contrat vérifié, proxy, offre, nombre et liste des détenteurs (repli si GoPlus ne répond pas) |
+| Les deux | [DexScreener](https://docs.dexscreener.com/api/reference) | prix, market cap, liquidité, volume, achats/ventes, âge, site et réseaux sociaux |
 
 Si une source ne répond pas, l'analyse continue avec les autres et la « fiabilité de l'analyse » baisse.
 
@@ -60,8 +63,27 @@ Chaque signal ajoute des points de risque (plafonné à 100) :
 | Marqué « rugged » par RugCheck | +60 |
 | Token établi (> 6 mois et > 1 M$ de liquidité) | −20 |
 
+Pour **Robinhood Chain**, les signaux « contrat » propres à Solana (autorités, Token-2022, RugCheck) sont remplacés par l'analyse GoPlus :
+
+| Signal (Robinhood Chain) | Points |
+| --- | --- |
+| Honeypot détecté par simulation | +60 |
+| Taxe de vente ≥ 50 % / taxes ≥ 10 % / > 5 % | +40 / +20 / +8 |
+| Soldes modifiables par le propriétaire | +35 |
+| Vente totale impossible | +30 |
+| Code source non vérifié | +25 |
+| Création de tokens possible | +25 |
+| Créateur ayant déjà fait des honeypots | +25 |
+| Taxe modifiable / transferts suspendables | +20 |
+| Propriétaire caché / propriété récupérable | +20 |
+| Contrat modifiable (proxy) / autodestruction / liste noire | +15 |
+| Créateur détenant > 5 % (> 20 %) | +6 (+12) |
+
+Les pouvoirs d'administration (mint, pause, taxe, liste noire, soldes) ne comptent que peu (+5) quand la propriété du contrat est renoncée.
+Les pools, adresses de burn et contrats sont exclus du calcul de concentration.
+
 Verdict : **0–19** risque faible · **20–44** prudence · **45–69** risque élevé · **70+** très probablement une arnaque.
-Les tokens connus (USDC, USDT, wSOL) sont plafonnés à 5, car leurs autorités actives sont normales.
+Les tokens connus (USDC, USDT, wSOL, et ceux de la liste de confiance GoPlus) sont plafonnés à 5, car leurs pouvoirs d'administration sont normaux.
 
 La logique de score se trouve dans [`js/analyze.js`](js/analyze.js).
 

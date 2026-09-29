@@ -235,6 +235,18 @@ button { font: inherit; color: inherit; }
 .token-info { min-width: 0; flex: 1; }
 .token-name { font-weight: 700; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .token-sub { font-size: 14px; color: var(--muted); }
+.chain-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.chain-badge.solana { color: #9945ff; background: color-mix(in srgb, #9945ff 14%, transparent); }
+.chain-badge.robinhood { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
 
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat {

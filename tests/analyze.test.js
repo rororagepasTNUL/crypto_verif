@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { buildData, analyze, SYSTEM_PROGRAM } = require('../js/analyze.js');
+const { buildData, analyze, detectChain, SYSTEM_PROGRAM } = require('../js/analyze.js');
 
 const MINT = 'ScamXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 const TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
@@ -150,4 +150,111 @@ test('les URL non http(s) sont ignorées', () => {
   });
   assert.strictEqual(data.market.websites.length, 0);
   assert.strictEqual(data.market.imageUrl, null);
+});
+
+/* --- Robinhood Chain ---------------------------------------------------- */
+
+const EVM = '0xAbCdEf0123456789abcdef0123456789ABCDEF01';
+const POOL = '0x1111111111111111111111111111111111111111';
+
+function evmPair(overrides = {}) {
+  // DexScreener renvoie les adresses avec une casse différente de celle saisie.
+  return pair(Object.assign({ pairAddress: POOL, baseToken: { address: EVM.toLowerCase(), name: 'Hood Moon', symbol: 'HMOON' } }, overrides));
+}
+
+function goplus(overrides = {}) {
+  return Object.assign(
+    {
+      token_name: 'Hood Moon',
+      token_symbol: 'HMOON',
+      is_open_source: '1',
+      is_proxy: '0',
+      is_mintable: '0',
+      owner_address: '0x0000000000000000000000000000000000000000',
+      is_honeypot: '0',
+      buy_tax: '0',
+      sell_tax: '0',
+      holder_count: '4321',
+      holders: [
+        { address: POOL, is_contract: 1, percent: '0.40', is_locked: 0 },
+        { address: '0x000000000000000000000000000000000000dEaD', is_contract: 0, percent: '0.20', is_locked: 0 },
+        { address: '0x2222222222222222222222222222222222222222', is_contract: 0, percent: '0.04', is_locked: 0 },
+        { address: '0x3333333333333333333333333333333333333333', is_contract: 0, percent: '0.03', is_locked: 0 },
+      ],
+      lp_holders: [{ address: '0x000000000000000000000000000000000000dead', percent: '0.99', is_locked: 0 }],
+    },
+    overrides
+  );
+}
+
+test('détection de la chaîne selon le format d\'adresse', () => {
+  assert.strictEqual(detectChain(EVM), 'robinhood');
+  assert.strictEqual(detectChain('DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'), 'solana');
+  assert.strictEqual(detectChain('0x123'), null);
+  assert.strictEqual(detectChain('pas une adresse'), null);
+});
+
+test('Robinhood : token sain', () => {
+  const data = buildData(EVM, { chain: 'robinhood', goplus: goplus(), dexPairs: [evmPair()] });
+  assert.strictEqual(data.chain, 'robinhood');
+  assert.ok(data.market, 'la paire doit être trouvée malgré la casse différente');
+  assert.strictEqual(data.holderCount, 4321);
+  assert.ok(data.holders[0].isProgram && data.holders[1].label === 'Brûlé', 'pool et burn exclus');
+  const r = analyze(data);
+  assert.strictEqual(r.level, 'low', JSON.stringify(r.checks, null, 2));
+  assert.ok(r.checks.find((c) => c.id === 'lp-lock' && c.status === 'ok'));
+  assert.ok(r.checks.find((c) => c.id === 'evm-owner' && c.status === 'ok'));
+});
+
+test('Robinhood : honeypot avec propriétaire actif', () => {
+  const data = buildData(EVM, {
+    chain: 'robinhood',
+    goplus: goplus({
+      is_honeypot: '1',
+      sell_tax: '0.99',
+      is_mintable: '1',
+      is_open_source: '0',
+      owner_address: '0x4444444444444444444444444444444444444444',
+      lp_holders: [{ address: '0x4444444444444444444444444444444444444444', percent: '1', is_locked: 0 }],
+    }),
+    dexPairs: [evmPair({ pairCreatedAt: Date.now() - 3 * HOUR })],
+  });
+  const r = analyze(data);
+  assert.strictEqual(r.level, 'scam');
+  const ids = r.checks.map((c) => c.id);
+  for (const id of ['evm-honeypot', 'evm-tax', 'evm-mint', 'evm-verified', 'lp-lock', 'evm-owner']) {
+    assert.ok(ids.includes(id), 'check manquant : ' + id);
+  }
+  assert.strictEqual(r.checks.find((c) => c.id === 'evm-mint').status, 'danger');
+});
+
+test('Robinhood : pouvoirs du contrat atténués si la propriété est renoncée', () => {
+  const data = buildData(EVM, { chain: 'robinhood', goplus: goplus({ is_mintable: '1', transfer_pausable: '1' }), dexPairs: [evmPair()] });
+  const r = analyze(data);
+  assert.strictEqual(r.checks.find((c) => c.id === 'evm-mint').status, 'warn');
+  assert.strictEqual(r.checks.find((c) => c.id === 'evm-pausable').points, 5);
+});
+
+test('Robinhood : sans GoPlus, repli sur Blockscout', () => {
+  const data = buildData(EVM, {
+    chain: 'robinhood',
+    goplus: null,
+    bsToken: { name: 'Hood Moon', symbol: 'HMOON', decimals: '18', total_supply: '1000000000000000000000', holders_count: '12' },
+    bsHolders: { items: [
+      { address: { hash: POOL, is_contract: true }, value: '500000000000000000000' },
+      { address: { hash: '0x2222222222222222222222222222222222222222', is_contract: false }, value: '300000000000000000000' },
+    ] },
+    bsAddress: { is_contract: true, is_verified: false, implementations: [{ address: '0x5555555555555555555555555555555555555555' }] },
+    dexPairs: null,
+  });
+  assert.strictEqual(data.token.supply, 1000);
+  assert.strictEqual(data.holderCount, 12);
+  assert.strictEqual(Math.round(data.holders[1].pct), 30);
+  const r = analyze(data);
+  const byId = Object.fromEntries(r.checks.map((c) => [c.id, c]));
+  assert.strictEqual(byId['evm-verified'].status, 'danger');
+  assert.strictEqual(byId['evm-security'].status, 'unknown');
+  assert.strictEqual(byId['evm-proxy'].status, 'warn');
+  assert.strictEqual(byId['top1'].status, 'danger');
+  assert.strictEqual(byId['liquidity'].status, 'danger');
 });
