@@ -254,6 +254,7 @@
   }
 
   function newSearch() {
+    showView('check');
     result.hidden = true;
     errorBox.hidden = true;
     input.value = '';
@@ -309,11 +310,38 @@
     store(RPC_KEY, !v || v === Api.DEFAULT_RPC ? null : v);
   });
 
-  // Garde le mint en passant à la version ordinateur.
+  /* --- Onglets -------------------------------------------------------- */
+
+  const trending = TrendingView.create($('view-trending'), {
+    getRpc: () => rpcInput.value.trim() || Api.DEFAULT_RPC,
+    onAnalyze: (address) => {
+      showView('check');
+      input.value = address;
+      syncClear();
+      run(address);
+    },
+  });
+
+  function showView(view) {
+    document.querySelectorAll('.tabs [data-view]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === view)));
+    $('view-check').hidden = view !== 'check';
+    $('view-trending').hidden = view !== 'trending';
+    const url = new URL(location.href);
+    url.hash = view === 'trending' ? 'tendances' : '';
+    history.replaceState(null, '', url);
+    if (view === 'trending') {
+      window.scrollTo({ top: 0 });
+      trending.show();
+    }
+  }
+
+  document.querySelectorAll('.tabs [data-view]').forEach((b) => b.addEventListener('click', () => showView(b.dataset.view)));
+
+  // Garde le mint (ou l'onglet Tendances) en passant à la version ordinateur.
   const initial = new URLSearchParams(location.search).get('mint');
   $('desktop-link').addEventListener('click', (e) => {
     const m = new URLSearchParams(location.search).get('mint');
-    if (m) e.currentTarget.href = 'index.html?desktop=1&mint=' + encodeURIComponent(m);
+    e.currentTarget.href = 'index.html?desktop=1' + (m ? '&mint=' + encodeURIComponent(m) : '') + location.hash;
   });
 
   renderRecent();
@@ -321,5 +349,7 @@
     input.value = initial;
     syncClear();
     run(initial);
+  } else if (location.hash === '#tendances') {
+    showView('trending');
   }
 })();

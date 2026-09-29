@@ -174,6 +174,46 @@
     };
   }
 
+  /* --- Tendances --------------------------------------------------------- */
+
+  /** Pools en tendance sur GeckoTerminal (2 pages ≈ 40 pools). Réseaux : 'solana', 'robinhood'. */
+  async function fetchTrending(chain) {
+    const base = 'https://api.geckoterminal.com/api/v2/networks/' + chain + '/trending_pools?include=base_token&page=';
+    const pages = await Promise.allSettled([fetchJson(base + '1'), fetchJson(base + '2')]);
+    if (pages[0].status === 'rejected') throw new Error('GeckoTerminal indisponible (' + pages[0].reason.message + ')');
+    return pages.map(settled);
+  }
+
+  /**
+   * Contrôle du contrat de plusieurs tokens en une fois. Renvoie { adresse: sources }
+   * au format attendu par Analyzer.buildData ; les adresses absentes n'ont pas pu être vérifiées.
+   */
+  async function fetchQuickSafety(chain, addresses, rpcUrl) {
+    const out = {};
+    if (!addresses.length) return out;
+    if (chain === 'robinhood') {
+      const chunks = [];
+      for (let i = 0; i < addresses.length; i += 10) chunks.push(addresses.slice(i, i + 10));
+      const results = await Promise.allSettled(chunks.map((c) =>
+        fetchJson('https://api.gopluslabs.io/api/v1/token_security/' + ROBINHOOD_CHAIN_ID + '?contract_addresses=' + c.map(encodeURIComponent).join(','))
+      ));
+      const byKey = {};
+      results.forEach((r) => {
+        if (r.status === 'fulfilled' && r.value && r.value.code === 1) Object.assign(byKey, r.value.result || {});
+      });
+      for (const a of addresses) {
+        const entry = byKey[a.toLowerCase()];
+        if (entry && Object.keys(entry).length) out[a] = { chain: 'robinhood', goplus: entry };
+      }
+    } else {
+      const res = await rpc(rpcUrl || DEFAULT_RPC, 'getMultipleAccounts', [addresses.slice(0, 100), { encoding: 'jsonParsed' }]);
+      (res.value || []).forEach((acc, i) => {
+        if (acc && acc.data && acc.data.parsed && acc.data.parsed.type === 'mint') out[addresses[i]] = { chain: 'solana', onchain: { mintAccount: acc } };
+      });
+    }
+    return out;
+  }
+
   /**
    * Interroge toutes les sources de la chaîne en parallèle. Une source en échec
    * n'empêche pas l'analyse ; seule une erreur « fatale » (adresse invalide) l'arrête.
@@ -182,5 +222,5 @@
     return chain === 'robinhood' ? fetchRobinhood(address) : fetchSolana(address, rpcUrl);
   }
 
-  root.Api = { fetchAll, DEFAULT_RPC };
+  root.Api = { fetchAll, fetchTrending, fetchQuickSafety, DEFAULT_RPC };
 })(window);

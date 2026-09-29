@@ -12,7 +12,7 @@
     (function () {
       var q = new URLSearchParams(location.search);
       if (!q.has('desktop') && matchMedia('(max-width: 700px) and (pointer: coarse)').matches) {
-        location.replace('mobile.html' + location.search);
+        location.replace('mobile.html' + location.search + location.hash);
       }
     })();
   </script>
@@ -27,6 +27,12 @@
       <p class="tagline">Collez l'adresse d'un token <strong>Solana</strong> (mint) ou <strong>Robinhood Chain</strong> (0x…) : on analyse le contrat, les détenteurs et le marché pour estimer s'il s'agit d'une arnaque.</p>
     </header>
 
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-check" data-view="check" aria-selected="true">🔍 Vérifier un token</button>
+      <button type="button" role="tab" id="tab-trending" data-view="trending" aria-selected="false">🔥 Tendances</button>
+    </nav>
+
+    <div id="view-check" role="tabpanel" aria-labelledby="tab-check">
     <form id="form" class="search" autocomplete="off">
       <input id="mint" name="mint" type="text" spellcheck="false" placeholder="Mint Solana ou adresse 0x Robinhood Chain" aria-label="Adresse du token">
       <button id="submit" type="submit">Analyser</button>
@@ -38,6 +44,13 @@
       <button type="button" class="link" data-mint="0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73">WETH (Robinhood)</button>
     </p>
 
+    <div id="error" class="error" hidden></div>
+    <div id="loading" class="loading" hidden><span class="spinner"></span>Analyse en cours…</div>
+    <section id="result" hidden></section>
+    </div>
+
+    <section id="view-trending" class="trending" role="tabpanel" aria-labelledby="tab-trending" hidden></section>
+
     <details class="settings">
       <summary>Paramètres</summary>
       <label for="rpc">URL RPC Solana</label>
@@ -45,19 +58,17 @@
       <p class="hint">Le RPC public est limité. Pour des résultats plus fiables, utilisez un RPC personnel (Helius, QuickNode…). Enregistré uniquement dans votre navigateur.</p>
     </details>
 
-    <div id="error" class="error" hidden></div>
-    <div id="loading" class="loading" hidden><span class="spinner"></span>Analyse en cours…</div>
-    <section id="result" hidden></section>
-
     <footer class="footer">
       <p>⚠️ Outil indicatif basé sur des heuristiques : un score faible ne garantit pas qu'un token est sûr, et ceci n'est pas un conseil financier. Faites toujours vos propres recherches.</p>
-      <p>Données : RPC Solana · <a href="https://dexscreener.com" target="_blank" rel="noopener">DexScreener</a> · <a href="https://rugcheck.xyz" target="_blank" rel="noopener">RugCheck</a> · <a href="https://gopluslabs.io" target="_blank" rel="noopener">GoPlus</a> · <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Blockscout</a></p>
+      <p>Données : RPC Solana · <a href="https://dexscreener.com" target="_blank" rel="noopener">DexScreener</a> · <a href="https://rugcheck.xyz" target="_blank" rel="noopener">RugCheck</a> · <a href="https://gopluslabs.io" target="_blank" rel="noopener">GoPlus</a> · <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Blockscout</a> · <a href="https://www.geckoterminal.com" target="_blank" rel="noopener">GeckoTerminal</a></p>
     </footer>
   </main>
 
   <script src="js/analyze.js"></script>
   <script src="js/format.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/momentum.js"></script>
+  <script src="js/trending-ui.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -567,6 +567,26 @@
     }, 0);
   }
 
+  /**
+   * Contrôle rapide du contrat seul (sans marché ni détenteurs), utilisé pour
+   * filtrer les listes de tokens en tendance.
+   */
+  function contractRisk(data) {
+    const checks = [];
+    const add = (c) => checks.push(Object.assign({ points: 0 }, c));
+    if (data.chain === 'robinhood') evmContractChecks(data.evm, add);
+    else solanaContractChecks(data.token, data.rugcheck, add);
+
+    const issues = checks.filter((c) => c.status === 'danger' || c.status === 'warn');
+    const known = checks.some((c) => c.status !== 'unknown');
+    let status = 'ok';
+    if (!known) status = 'unknown';
+    else if (checks.some((c) => c.status === 'danger')) status = 'danger';
+    else if (issues.length) status = 'warn';
+    issues.sort((a, b) => b.points - a.points);
+    return { status, points: checks.reduce((a, c) => a + c.points, 0), issues: issues.map((c) => c.label) };
+  }
+
   function analyze(data) {
     const checks = [];
     const add = (c) => checks.push(Object.assign({ points: 0 }, c));
@@ -756,7 +776,7 @@
     return { score, level, verdict, summary, confidence, checks };
   }
 
-  const api = { buildData, analyze, detectChain, fmtUsd, fmtPct, SYSTEM_PROGRAM, TOKEN_2022_PROGRAM };
+  const api = { buildData, analyze, contractRisk, detectChain, safeUrl, fmtUsd, fmtPct, SYSTEM_PROGRAM, TOKEN_2022_PROGRAM };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Analyzer = api;
 })(typeof window !== 'undefined' ? window : globalThis);

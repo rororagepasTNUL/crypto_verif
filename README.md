@@ -16,6 +16,30 @@ npm start
 On peut aussi simplement double-cliquer sur `index.html`, ou publier le dossier sur GitHub Pages.
 Un lien direct vers une analyse : `index.html?mint=<ADRESSE>`.
 
+## Onglet « Tendances »
+
+L'onglet **🔥 Tendances** (ou `index.html#tendances`) classe les tokens en tendance sur Solana ou Robinhood Chain selon leur **dynamique actuelle**.
+
+> ⚠️ **Ce n'est pas une prédiction.** Personne ne peut savoir quel token va monter. Le classement mesure seulement l'élan du moment, et la plupart des tokens qui s'envolent finissent par rechuter.
+
+1. Les ~40 pools en tendance sont récupérées sur [GeckoTerminal](https://www.geckoterminal.com) (API publique gratuite). Un token n'apparaît qu'une fois, avec sa pool la plus liquide ; SOL, WETH et les stablecoins sont ignorés.
+2. Chaque token reçoit un **score de dynamique** de 0 à 100 (50 = neutre), avec les 3 raisons principales affichées :
+
+   | Signal | Effet |
+   | --- | --- |
+   | Hausse du prix sur 24 h / 6 h / 1 h | jusqu'à +20 / +10 / +10 (baisse : jusqu'à −20 / −10 / −10) |
+   | Part de portefeuilles acheteurs (24 h, puis dernière heure) | jusqu'à ±15 et ±10 |
+   | Volume de la dernière heure comparé à la moyenne | de −8 à +12 |
+   | Volume 24 h comparé à la liquidité | jusqu'à +10 ; −5 si anormal (échanges artificiels ?) ou très faible |
+   | Liquidité < 10 k$ / < 50 k$ / ≥ 250 k$ | −25 / −10 / +5 |
+   | Pool de moins de 6 h / de plus d'un mois | −15 / +3 |
+   | Moins de 50 / plus de 2 000 acheteurs uniques en 24 h | −10 / +5 |
+
+   Le total passe par une courbe progressive (tanh) pour ne pas saturer à 100.
+   Un token qui a **déjà** fait plus de +300 % en 24 h (ou +200 % en 6 h) est classé « Surchauffe » et plafonné à 60 : il est plus proche de la chute que du décollage.
+3. Le contrat de chaque token est **contrôlé en lot** avec les mêmes règles que l'analyse complète : autorités de mint et de gel (RPC Solana), ou honeypot, taxes et fonctions dangereuses (GoPlus). Les tokens au contrat risqué ou à la liquidité inférieure à 10 k$ sont masqués par défaut.
+4. Le bouton **Analyser** lance l'analyse complète du token.
+
 ## Version téléphone
 
 `mobile.html` est une version pensée pour le téléphone : gros boutons, bouton « Coller », historique des recherches, partage du résultat, alertes mises en avant.

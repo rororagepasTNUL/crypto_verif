@@ -22,6 +22,12 @@
   </header>
 
   <main class="page">
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-check" data-view="check" aria-selected="true">🔍 Vérifier</button>
+      <button type="button" role="tab" id="tab-trending" data-view="trending" aria-selected="false">🔥 Tendances</button>
+    </nav>
+
+    <div id="view-check" class="view" role="tabpanel" aria-labelledby="tab-check">
     <section class="search-card">
       <form id="form" autocomplete="off">
         <label for="mint" class="search-label">Adresse du token (Solana ou Robinhood Chain)</label>
@@ -60,6 +66,9 @@
     </div>
 
     <section id="result" hidden></section>
+    </div>
+
+    <section id="view-trending" class="view trending" role="tabpanel" aria-labelledby="tab-trending" hidden></section>
 
     <details class="settings">
       <summary>⚙️ Paramètres</summary>
@@ -78,6 +87,8 @@
   <script src="js/analyze.js"></script>
   <script src="js/format.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/momentum.js"></script>
+  <script src="js/trending-ui.js"></script>
   <script src="js/mobile.js"></script>
 </body>
 </html>

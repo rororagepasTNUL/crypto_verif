@@ -185,10 +185,35 @@
     })
   );
 
+  /* --- Onglets -------------------------------------------------------- */
+
+  const trending = TrendingView.create($('view-trending'), {
+    getRpc: () => rpcInput.value.trim() || Api.DEFAULT_RPC,
+    onAnalyze: (address) => {
+      showView('check');
+      input.value = address;
+      run(address);
+    },
+  });
+
+  function showView(view) {
+    document.querySelectorAll('.tabs [data-view]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === view)));
+    $('view-check').hidden = view !== 'check';
+    $('view-trending').hidden = view !== 'trending';
+    const url = new URL(location.href);
+    url.hash = view === 'trending' ? 'tendances' : '';
+    history.replaceState(null, '', url);
+    if (view === 'trending') trending.show();
+  }
+
+  document.querySelectorAll('.tabs [data-view]').forEach((b) => b.addEventListener('click', () => showView(b.dataset.view)));
+
   loadRpc();
   const initial = new URLSearchParams(location.search).get('mint');
   if (initial) {
     input.value = initial;
     run(initial.trim());
+  } else if (location.hash === '#tendances') {
+    showView('trending');
   }
 })();
